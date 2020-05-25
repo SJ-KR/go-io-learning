@@ -14,6 +14,10 @@ type PlayerServer struct {
 	store PlayerStore
 }
 
+func NewPlayerServer(store PlayerStore) *PlayerServer {
+	return &PlayerServer{store: store}
+}
+
 func (p *PlayerServer) GetPlayerScore(name string) int {
 	if name == "Pepper" {
 		return 20
