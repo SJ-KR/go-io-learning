@@ -12,11 +12,11 @@ type PlayerStore interface {
 }
 
 type PlayerServer struct {
-	store PlayerStore
+	Store PlayerStore
 }
 
 func NewPlayerServer(store PlayerStore) *PlayerServer {
-	return &PlayerServer{store: store}
+	return &PlayerServer{Store: store}
 }
 
 func (p *PlayerServer) GetPlayerScore(name string) int {
@@ -42,13 +42,13 @@ func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 func (p *PlayerServer) processWin(w http.ResponseWriter, player string) {
 
-	p.store.RecordWin(player)
+	p.Store.RecordWin(player)
 	w.WriteHeader(http.StatusAccepted)
 
 }
 func (p *PlayerServer) showScore(w http.ResponseWriter, player string) {
 
-	score := p.store.GetPlayerScore(player)
+	score := p.Store.GetPlayerScore(player)
 
 	if score == 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -78,12 +78,15 @@ func (s *StubPlayerStore) RecordWin(name string) {
 }
 
 type InMemoryPlayerStore struct {
-	store PlayerStore
+	store map[string]int
 }
 
+func NewInMemoryPlayerStore() *InMemoryPlayerStore {
+	return &InMemoryPlayerStore{map[string]int{}}
+}
 func (i *InMemoryPlayerStore) GetPlayerScore(name string) int {
-	return 3
+	return i.store[name]
 }
 func (i *InMemoryPlayerStore) RecordWin(name string) {
-
+	i.store[name]++
 }
