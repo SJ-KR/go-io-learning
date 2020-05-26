@@ -30,8 +30,11 @@ func (p *PlayerServer) GetPlayerScore(name string) int {
 
 func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	player := strings.TrimPrefix(r.URL.Path, "/players/")
+	score := p.store.GetPlayerScore(player)
 
-	w.WriteHeader(http.StatusNotFound)
+	if score == 0 {
+		w.WriteHeader(http.StatusNotFound)
+	}
 
 	fmt.Fprintf(w, "%d", p.store.GetPlayerScore(player))
 }
