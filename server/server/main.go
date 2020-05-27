@@ -4,12 +4,20 @@ import (
 	sv "go-io-learning/server"
 	"log"
 	"net/http"
+	"os"
 )
 
-func main() {
-	store := sv.NewInMemoryPlayerStore()
+const dbFileName = "game.db.json"
 
-	server := &sv.PlayerServer{Store: store}
+func main() {
+	db, err := os.OpenFile(dbFileName, os.O_RDWR|os.O_CREATE, 0666)
+
+	if err != nil {
+		log.Fatalf("problem opening %s %v", dbFileName, err)
+	}
+
+	store := &sv.FileSystemPlayerStore{Database: db}
+	server := sv.NewPlayerServer(store)
 
 	if err := http.ListenAndServe(":5000", server); err != nil {
 		log.Fatalf("could not listen on port 5000 %v", err)
