@@ -31,21 +31,25 @@ func (p *PlayerServer) GetPlayerScore(name string) int {
 func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	router := http.NewServeMux()
-	router.Handle("/league", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	router.Handle("/player", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		player := r.URL.Path[len("/players/"):]
-		//player := strings.TrimPrefix(r.URL.Path, "/players/")
-		switch r.Method {
-		case http.MethodPost:
-			p.processWin(w, player)
-		case http.MethodGet:
-			p.showScore(w, player)
-		}
-	}))
+	router.Handle("/league", http.HandlerFunc(p.leagueHandler))
+	router.Handle("/players/", http.HandlerFunc(p.playerHandler))
 
 	router.ServeHTTP(w, r)
+
+}
+func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+
+}
+func (p *PlayerServer) playerHandler(w http.ResponseWriter, r *http.Request) {
+
+	player := r.URL.Path[len("/players/"):]
+	switch r.Method {
+	case http.MethodPost:
+		p.processWin(w, player)
+	case http.MethodGet:
+		p.showScore(w, player)
+	}
 
 }
 func (p *PlayerServer) processWin(w http.ResponseWriter, player string) {
