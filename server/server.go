@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -130,4 +131,38 @@ func (i *InMemoryPlayerStore) GetLeague() []Player {
 		league = append(league, Player{name, wins})
 	}
 	return league
+}
+
+type FileSystemPlayerStore struct {
+	database io.ReadSeeker
+}
+
+func (f *FileSystemPlayerStore) GetPlayerScore(name string) int {
+	var league []Player
+	json.NewDecoder(f.database).Decode(&league)
+	for _, l := range league {
+		if l.Name == name {
+			return l.Wins
+		}
+	}
+	return 0
+}
+
+func (f *FileSystemPlayerStore) RecordWin(name []byte) {
+	_, _ = f.database.Read(name)
+}
+
+func (f *FileSystemPlayerStore) GetLeague() []Player {
+	league, _ := NewLeague(f.database)
+	return league
+}
+
+func NewLeague(rdr io.Reader) ([]Player, error) {
+	var league []Player
+	err := json.NewDecoder(rdr).Decode(&league)
+	if err != nil {
+		err = fmt.Errorf("problem parsing league, %v", err)
+	}
+
+	return league, err
 }
