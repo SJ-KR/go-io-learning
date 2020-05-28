@@ -91,6 +91,12 @@ type StubPlayerStore struct {
 	league   []Player
 }
 
+func NewStubPlayerStore() *StubPlayerStore {
+	return &StubPlayerStore{}
+}
+func (s *StubPlayerStore) GetWinCalls() []string {
+	return s.winCalls
+}
 func (s *StubPlayerStore) GetPlayerScore(name string) int {
 	score := s.scores[name]
 	return score

@@ -1,29 +1,28 @@
 package main
 
-import "fmt"
+import (
+	"go-io-learning/poker"
+	"log"
+	"net/http"
+	"os"
+)
 
 const dbFileName = "game.db.json"
 
 func main() {
-	fmt.Println("Let's play poker")
+	store, close, err := poker.FileSystemPlayerStoreFromFile(dbFileName)
+	defer close()
 
-	/*
-		db, err := os.OpenFile(dbFileName, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		if err != nil {
-			log.Fatalf("problem opening %s %v", dbFileName, err)
-		}
+	poker.NewCLI(store, os.Stdin).PlayPoker()
 
-		store, err := poker.NewFileSystemPlayerStore(db)
+	server := poker.NewPlayerServer(store)
 
-		if err != nil {
-			log.Fatalf("problem creating file system player store, %v ", err)
-		}
+	if err := http.ListenAndServe(":5000", server); err != nil {
+		log.Fatalf("could not listen on port 5000 %v", err)
+	}
 
-		server := poker.NewPlayerServer(store)
-
-		if err := http.ListenAndServe(":5000", server); err != nil {
-			log.Fatalf("could not listen on port 5000 %v", err)
-		}
-	*/
 }
