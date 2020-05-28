@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 )
 
 type PlayerStore interface {
@@ -191,6 +192,9 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 
 func (f *FileSystemPlayerStore) GetLeague() League {
 
+	sort.Slice(f.League, func(i, j int) bool {
+		return f.League[i].Wins > f.League[j].Wins
+	})
 	return f.League
 }
 
