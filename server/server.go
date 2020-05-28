@@ -3,8 +3,8 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
+	"os"
 )
 
 type PlayerStore interface {
@@ -67,7 +67,6 @@ func (p *PlayerServer) playerHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		p.showScore(w, player)
 	}
-
 }
 func (p *PlayerServer) processWin(w http.ResponseWriter, player string) {
 
@@ -84,14 +83,6 @@ func (p *PlayerServer) showScore(w http.ResponseWriter, player string) {
 	}
 	fmt.Fprintf(w, "%d", score)
 }
-
-/*
-func PlayerServer(w http.ResponseWriter, r *http.Request) {
-	player := strings.TrimPrefix(r.URL.Path, "/players/")
-
-	fmt.Fprint(w, GetPlayerScore(player))
-}
-*/
 
 type StubPlayerStore struct {
 	scores   map[string]int
@@ -111,6 +102,7 @@ func (s *StubPlayerStore) GetLeague() League {
 	return s.league
 }
 
+/*
 type InMemoryPlayerStore struct {
 	store map[string]int
 }
@@ -132,20 +124,24 @@ func (i *InMemoryPlayerStore) GetLeague() League {
 	}
 	return league
 }
-
+*/
 type FileSystemPlayerStore struct {
-	Database io.ReadWriteSeeker
+	Database *json.Encoder
 	League   League
 }
 
-func NewFileSystemPlayerStore(database io.ReadWriteSeeker) *FileSystemPlayerStore {
-	database.Seek(0, 0)
-	league, _ := NewLeague(database)
+func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
+	file.Seek(0, 0)
+	league, err := NewLeague(file)
+
+	if err != nil {
+		return nil, fmt.Errorf("problem loading player store from file %s, %v", file.Name(), err)
+	}
 
 	return &FileSystemPlayerStore{
-		Database: database,
+		Database: json.NewEncoder(&tape{file}),
 		League:   league,
-	}
+	}, nil
 }
 
 func (f *FileSystemPlayerStore) GetPlayerScore(name string) int {
@@ -167,9 +163,10 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 	} else {
 		f.League = append(f.League, Player{name, 1})
 	}
-
-	f.Database.Seek(0, 0)
-	json.NewEncoder(f.Database).Encode(f.League)
+	/*
+		f.Database.Seek(0, 0)
+		json.NewEncoder(f.Database).Encode(f.League)
+	*/
 }
 
 func (f *FileSystemPlayerStore) GetLeague() League {
@@ -177,9 +174,9 @@ func (f *FileSystemPlayerStore) GetLeague() League {
 	return f.League
 }
 
-func NewLeague(rdr io.Reader) (League, error) {
+func NewLeague(file *os.File) (League, error) {
 	var league League
-	err := json.NewDecoder(rdr).Decode(&league)
+	err := json.NewDecoder(file).Decode(&league)
 	if err != nil {
 		err = fmt.Errorf("problem parsing league, %v", err)
 	}
@@ -196,4 +193,14 @@ func (l League) Find(name string) *Player {
 		}
 	}
 	return nil
+}
+
+type tape struct {
+	file *os.File
+}
+
+func (t *tape) Write(p []byte) (n int, err error) {
+	t.file.Truncate(0)
+	t.file.Seek(0, 0)
+	return t.file.Write(p)
 }
