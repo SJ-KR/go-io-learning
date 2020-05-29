@@ -7,20 +7,30 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 type CLI struct {
 	playerStore PlayerStore
 	in          *bufio.Scanner
+	alerter     BlindAlerter
 }
 
-func NewCLI(playerStore PlayerStore, in io.Reader) *CLI {
-	return &CLI{playerStore: playerStore, in: bufio.NewScanner(in)}
+func NewCLI(playerStore PlayerStore, in io.Reader, alerter BlindAlerter) *CLI {
+	return &CLI{playerStore: playerStore, in: bufio.NewScanner(in), alerter: alerter}
 }
 
 func (cli *CLI) PlayPoker() {
+	blinds := []int{100, 200, 300, 400, 500, 600, 800, 1000, 2000, 4000, 8000}
+	blindTime := 0 * time.Second
+	for _, blind := range blinds {
+		cli.alerter.ScheduleAlertAt(blindTime, blind)
+		blindTime = blindTime + 10*time.Minute
+	}
+
 	userInput := cli.readLine()
 	cli.playerStore.RecordWin(extractWinner(userInput))
+
 }
 func extractWinner(input string) string {
 
@@ -61,4 +71,22 @@ func AssertPlayerWin(t *testing.T, store *StubPlayerStore, winner string) {
 	if store.winCalls[0] != winner {
 		t.Errorf("did not store correct winner got %q want %q", store.winCalls[0], winner)
 	}
+}
+
+type BlindAlerter interface {
+	ScheduleAlertAt(duration time.Duration, amount int)
+}
+
+type SpyBlindAlerter struct {
+	Alerts []struct {
+		scheduledAt time.Duration
+		amount      int
+	}
+}
+
+func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int) {
+	s.Alerts = append(s.Alerts, struct {
+		scheduledAt time.Duration
+		amount      int
+	}{duration, amount})
 }
