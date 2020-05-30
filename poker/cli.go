@@ -12,17 +12,11 @@ import (
 )
 
 type CLI struct {
-	in  *bufio.Scanner
-	out io.Writer
-
+	in   *bufio.Scanner
+	out  io.Writer
 	game *Game
 }
 
-/*
-func NewCLI(playerStore PlayerStore, in io.Reader, out io.Writer, alerter BlindAlerter) *CLI {
-	return &CLI{playerStore: playerStore, in: bufio.NewScanner(in), out: out, alerter: alerter}
-}
-*/
 func NewCLI(in io.Reader, out io.Writer, game *Game) *CLI {
 	return &CLI{
 		in:   bufio.NewScanner(in),
@@ -34,38 +28,27 @@ func NewCLI(in io.Reader, out io.Writer, game *Game) *CLI {
 const PlayerPrompt = "Please enter the number of players: "
 
 func (cli *CLI) PlayPoker() {
-	fmt.Fprintf(cli.out, PlayerPrompt)
-	numberOfPlayers, _ := strconv.Atoi(cli.readLine())
+	fmt.Fprint(cli.out, PlayerPrompt)
 
-	cli.scheduleBlindAlerts(numberOfPlayers)
+	numberOfPlayersInput := cli.readLine()
+	numberOfPlayers, _ := strconv.Atoi(strings.Trim(numberOfPlayersInput, "\n"))
 
-	userInput := cli.readLine()
+	cli.game.Start(numberOfPlayers)
 
-	cli.game.store.RecordWin(extractWinner(userInput))
+	winnerInput := cli.readLine()
+	winner := extractWinner(winnerInput)
+
+	cli.game.Finish(winner)
 
 }
 
-func (cli *CLI) scheduleBlindAlerts(numberOfPlayers int) {
-	//blindIncrement := (5 + time.Duration(numberOfPlayers)) * time.Minute
-	blindIncrement := (5 + time.Duration(numberOfPlayers)) * time.Second
-	blinds := []int{100, 200, 300, 400, 500, 600, 800, 1000, 2000, 4000, 8000}
-	blindTime := 0 * time.Second
-
-	for _, blind := range blinds {
-		cli.game.alerter.ScheduleAlertAt(blindTime, blind)
-
-		blindTime = blindTime + blindIncrement
-		//blindTime = blindTime + 10*time.Second
-	}
-}
 func extractWinner(input string) string {
-
-	return strings.Replace(input, " wins", "", 1)
+	return strings.Replace(input, " wins\n", "", 1)
 }
 
 func (cli *CLI) readLine() string {
 	cli.in.Scan()
-	return extractWinner(cli.in.Text())
+	return cli.in.Text()
 }
 func FileSystemPlayerStoreFromFile(path string) (*FileSystemPlayerStore, func(), error) {
 	db, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)

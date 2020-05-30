@@ -39,13 +39,8 @@ func NewPlayerServer(store PlayerStore) *PlayerServer {
 }
 
 func (p *PlayerServer) GetPlayerScore(name string) int {
-	if name == "Pepper" {
-		return 20
-	}
-	if name == "Floyd" {
-		return 10
-	}
-	return 0
+
+	return p.Store.GetPlayerScore(name)
 }
 
 func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {

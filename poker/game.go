@@ -4,6 +4,16 @@ import (
 	"time"
 )
 
+type GameIFC interface {
+	Start(numberOfPlayers int)
+	Finish(winner string)
+}
+
+type GameSpy struct {
+	StartedWith  int
+	FinishedWith string
+}
+
 type Game struct {
 	alerter BlindAlerter
 	store   PlayerStore
@@ -15,6 +25,7 @@ func NewGame(alerter BlindAlerter, store PlayerStore) *Game {
 		store:   store,
 	}
 }
+
 func (p *Game) Start(numberOfPlayers int) {
 	blindIncrement := time.Duration(5+numberOfPlayers) * time.Minute
 
