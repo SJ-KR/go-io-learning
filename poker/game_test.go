@@ -1,6 +1,8 @@
 package poker
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 	"time"
 )
@@ -44,7 +46,32 @@ func TestGame_Start(t *testing.T) {
 
 		checkSchedulingCases(cases, t, blindAlerter)
 	})
+	t.Run("it prompts the user to enter the number of players and starts the game", func(t *testing.T) {
+		stdout := &bytes.Buffer{}
+		in := strings.NewReader("7\n")
+		game := &GameSpy{}
 
+		cli := NewCLI(in, stdout, game)
+		cli.PlayPoker()
+		assertMessagesSentToUser(t, stdout, PlayerPrompt)
+
+		if game.StartedWith != 7 {
+			t.Errorf("wanted Start called with 7 but got %d", game.StartedWith)
+		}
+	})
+	t.Run("it prints an error when a non numeric value is entered and does not start the game", func(t *testing.T) {
+		stdout := &bytes.Buffer{}
+		in := strings.NewReader("Pies\n")
+		game := &GameSpy{}
+
+		cli := NewCLI(in, stdout, game)
+		cli.PlayPoker()
+
+		if game.StartCalled {
+			t.Errorf("game should not have started")
+		}
+
+	})
 }
 func checkSchedulingCases(cases []scheduledAlert, t *testing.T, blindAlerter *SpyBlindAlerter) {
 	a := blindAlerter.Alerts
@@ -64,4 +91,12 @@ func TestGame_Finish(t *testing.T) {
 
 	game.Finish(winner)
 	AssertPlayerWin(t, store, winner)
+}
+func assertMessagesSentToUser(t *testing.T, stdout *bytes.Buffer, messages ...string) {
+	t.Helper()
+	want := strings.Join(messages, "")
+	got := stdout.String()
+	if got != want {
+		t.Errorf("got %q sent to stdout but expected %+v", got, messages)
+	}
 }

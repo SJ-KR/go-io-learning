@@ -12,6 +12,9 @@ type GameIFC interface {
 type GameSpy struct {
 	StartedWith  int
 	FinishedWith string
+
+	StartCalled  bool
+	FinishCalled bool
 }
 
 type Game struct {
@@ -39,4 +42,14 @@ func (p *Game) Start(numberOfPlayers int) {
 
 func (p *Game) Finish(winner string) {
 	p.store.RecordWin(winner)
+}
+
+func (p *GameSpy) Start(numberOfPlayers int) {
+	p.StartedWith = numberOfPlayers
+	p.StartCalled = true
+}
+
+func (p *GameSpy) Finish(winner string) {
+	p.FinishedWith = winner
+	p.FinishCalled = true
 }
