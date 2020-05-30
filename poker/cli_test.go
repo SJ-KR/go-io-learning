@@ -1,6 +1,7 @@
 package poker
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"testing"
@@ -8,6 +9,10 @@ import (
 )
 
 var dummySpyAlerter = &SpyBlindAlerter{}
+var dummyBlindAlerter = &SpyBlindAlerter{}
+var dummyPlayerStore = &StubPlayerStore{}
+var dummyStdIn = &bytes.Buffer{}
+var dummyStdOut = &bytes.Buffer{}
 
 func TestCLI(t *testing.T) {
 
@@ -15,7 +20,7 @@ func TestCLI(t *testing.T) {
 		in := strings.NewReader("Chris wins\n")
 		playerStore := &StubPlayerStore{}
 
-		cli := NewCLI(playerStore, in, dummySpyAlerter)
+		cli := NewCLI(playerStore, in, dummyStdOut, dummySpyAlerter)
 		cli.PlayPoker()
 
 		AssertPlayerWin(t, playerStore, "Chris")
@@ -25,11 +30,12 @@ func TestCLI(t *testing.T) {
 		in := strings.NewReader("Cleo wins\n")
 		playerStore := &StubPlayerStore{}
 
-		cli := NewCLI(playerStore, in, dummySpyAlerter)
+		cli := NewCLI(playerStore, in, dummyStdOut, dummySpyAlerter)
 		cli.PlayPoker()
 
 		AssertPlayerWin(t, playerStore, "Cleo")
 	})
+
 }
 
 func assertPlayerWin(t *testing.T, store *StubPlayerStore, winner string) {
@@ -50,7 +56,7 @@ func TestTime(t *testing.T) {
 		playerStore := &StubPlayerStore{}
 		blindAlerter := &SpyBlindAlerter{}
 
-		cli := NewCLI(playerStore, in, blindAlerter)
+		cli := NewCLI(playerStore, in, dummyStdOut, blindAlerter)
 		cli.PlayPoker()
 
 		if len(blindAlerter.Alerts) != 1 {
@@ -63,7 +69,7 @@ func TestTime(t *testing.T) {
 		playerStore := &StubPlayerStore{}
 		blindAlerter := &SpyBlindAlerter{}
 
-		cli := NewCLI(playerStore, in, blindAlerter)
+		cli := NewCLI(playerStore, in, dummyStdOut, blindAlerter)
 		cli.PlayPoker()
 
 		cases := []scheduledAlert{
@@ -78,6 +84,40 @@ func TestTime(t *testing.T) {
 			{80 * time.Minute, 2000},
 			{90 * time.Minute, 4000},
 			{100 * time.Minute, 8000},
+		}
+
+		for i, want := range cases {
+			t.Run(fmt.Sprint(want), func(t *testing.T) {
+
+				if len(blindAlerter.Alerts) <= i {
+					t.Fatalf("alert %d was not scheduled %v", i, blindAlerter.Alerts)
+				}
+
+				got := blindAlerter.Alerts[i]
+				assertScheduledAlert(t, got, want)
+			})
+		}
+	})
+	t.Run("it prompts the user to enter the number of players", func(t *testing.T) {
+		stdout := &bytes.Buffer{}
+		in := strings.NewReader("7\n")
+		blindAlerter := &SpyBlindAlerter{}
+
+		cli := NewCLI(dummyPlayerStore, in, stdout, blindAlerter)
+		cli.PlayPoker()
+
+		got := stdout.String()
+		want := PlayerPrompt
+
+		if got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+
+		cases := []scheduledAlert{
+			{0 * time.Second, 100},
+			{12 * time.Minute, 200},
+			{24 * time.Minute, 300},
+			{36 * time.Minute, 400},
 		}
 
 		for i, want := range cases {
