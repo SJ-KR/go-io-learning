@@ -17,8 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	poker.NewCLI(store, os.Stdin).PlayPoker()
-
+	poker.NewCLI(store, os.Stdin, poker.BlindAlerterFunc(poker.StdOutAlerter)).PlayPoker()
 	server := poker.NewPlayerServer(store)
 
 	if err := http.ListenAndServe(":5000", server); err != nil {
