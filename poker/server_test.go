@@ -16,7 +16,7 @@ func TestGETPlayers(t *testing.T) {
 		nil,
 		nil,
 	}
-	server, _ := NewPlayerServer(&store)
+	server, _ := NewPlayerServer(&store, dummyGame)
 
 	t.Run("returns Pepper's score", func(t *testing.T) {
 		request := newGetScoreRequest("Pepper")
@@ -69,7 +69,7 @@ func TestStoreWins(t *testing.T) {
 		[]string{},
 		nil,
 	}
-	server, _ := NewPlayerServer(&store)
+	server, _ := NewPlayerServer(&store, dummyGame)
 
 	t.Run("it returns accepted on POST", func(t *testing.T) {
 
@@ -99,7 +99,7 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	defer cleanDatabase()
 	store, _ := NewFileSystemPlayerStore(database)
 
-	server, _ := NewPlayerServer(store)
+	server, _ := NewPlayerServer(store, dummyGame)
 	player := "Pepper"
 
 	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(player))

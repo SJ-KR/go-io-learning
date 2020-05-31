@@ -22,9 +22,9 @@ func main() {
 		log.Fatalf("problem creating file system player store, %v ", err)
 	}
 
-	//game := poker.NewTexasHoldem(poker.BlindAlerterFunc(poker.StdOutAlerter), store)
+	game := poker.NewTexasHoldem(poker.BlindAlerterFunc(poker.StdOutAlerter), store)
 
-	server, err := poker.NewPlayerServer(store)
+	server, err := poker.NewPlayerServer(store, game)
 
 	if err != nil {
 		log.Fatalf("problem creating player server %v", err)

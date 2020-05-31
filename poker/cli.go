@@ -40,7 +40,7 @@ func (cli *CLI) PlayPoker() {
 		fmt.Fprint(cli.out, BadPlayerInputErrMsg)
 		return
 	}
-	cli.game.Start(numberOfPlayers)
+	cli.game.Start(numberOfPlayers, cli.out)
 
 	winnerInput := cli.readLine()
 	winner := extractWinner(winnerInput)
@@ -116,6 +116,6 @@ type scheduledAlert struct {
 func (s scheduledAlert) String() string {
 	return fmt.Sprintf("%d chips at %v", s.amount, s.at)
 }
-func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int) {
+func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int, to io.Writer) {
 	s.Alerts = append(s.Alerts, scheduledAlert{duration, amount})
 }

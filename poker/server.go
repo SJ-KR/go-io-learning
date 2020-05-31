@@ -8,10 +8,15 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 )
 
 const jsonContentType = "application/json"
 const htmlTemplatePath = "game.html"
+
+var (
+	dummyGame = &GameSpy{}
+)
 
 type PlayerStore interface {
 	GetPlayerScore(name string) int
@@ -23,26 +28,27 @@ type PlayerServer struct {
 	Store PlayerStore
 	http.Handler
 	template *template.Template
+	game     Game
 }
 type Player struct {
 	Name string
 	Wins int
 }
 
-func NewPlayerServer(store PlayerStore) (*PlayerServer, error) {
+func NewPlayerServer(store PlayerStore, game Game) (*PlayerServer, error) {
 	p := new(PlayerServer)
 	tmpl, err := template.ParseFiles(htmlTemplatePath)
 	if err != nil {
 		return nil, fmt.Errorf("problem opening %s %v", htmlTemplatePath, err)
 	}
-
+	p.game = game
 	p.template = tmpl
 	p.Store = store
 
 	router := http.NewServeMux()
 	router.Handle("/league", http.HandlerFunc(p.leagueHandler))
 	router.Handle("/players/", http.HandlerFunc(p.playerHandler))
-	router.Handle("/game", http.HandlerFunc(p.game))
+	router.Handle("/game", http.HandlerFunc(p.playGame))
 	router.Handle("/ws", http.HandlerFunc(p.webSocket))
 
 	p.Handler = router
@@ -56,14 +62,19 @@ var wsUpgrader = websocket.Upgrader{
 }
 
 func (p *PlayerServer) webSocket(w http.ResponseWriter, r *http.Request) {
+	ws := newPlayerServerWS(w, r)
 
-	conn, _ := wsUpgrader.Upgrade(w, r, nil)
-	_, winnerMsg, _ := conn.ReadMessage()
+	numberOfPlayersMsg := ws.WaitForMsg()
 
-	p.Store.RecordWin(string(winnerMsg))
+	numberOfPlayers, _ := strconv.Atoi(numberOfPlayersMsg)
+	p.game.Start(numberOfPlayers, ws)
+
+	winner := ws.WaitForMsg()
+	p.game.Finish(winner)
+
 }
 
-func (p *PlayerServer) game(w http.ResponseWriter, r *http.Request) {
+func (p *PlayerServer) playGame(w http.ResponseWriter, r *http.Request) {
 	p.template.Execute(w, nil)
 }
 

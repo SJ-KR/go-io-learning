@@ -3,6 +3,7 @@ package poker
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,7 +16,7 @@ func TestGame_Start(t *testing.T) {
 		blindAlerter := &SpyBlindAlerter{}
 		game := NewTexasHoldem(blindAlerter, dummyPlayerStore)
 
-		game.Start(5)
+		game.Start(5, ioutil.Discard)
 
 		cases := []scheduledAlert{
 			{at: 0 * time.Second, amount: 100},
@@ -38,7 +39,7 @@ func TestGame_Start(t *testing.T) {
 		blindAlerter := &SpyBlindAlerter{}
 		game := NewTexasHoldem(blindAlerter, dummyPlayerStore)
 
-		game.Start(7)
+		game.Start(7, ioutil.Discard)
 
 		cases := []scheduledAlert{
 			{at: 0 * time.Second, amount: 100},
@@ -78,7 +79,7 @@ func TestGame_Start(t *testing.T) {
 }
 func TestGame(t *testing.T) {
 	t.Run("GET /game returns 200", func(t *testing.T) {
-		server, _ := NewPlayerServer(&StubPlayerStore{})
+		server, _ := NewPlayerServer(&StubPlayerStore{}, dummyGame)
 
 		request := newGameRequest()
 
@@ -88,6 +89,7 @@ func TestGame(t *testing.T) {
 
 		assertStatus(t, response.Code, http.StatusOK)
 	})
+
 }
 func newGameRequest() *http.Request {
 	request, err := http.NewRequest(http.MethodGet, "/game", nil)

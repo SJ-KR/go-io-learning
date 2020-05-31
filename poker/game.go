@@ -11,11 +11,13 @@ type Game interface {
 }
 
 type GameSpy struct {
-	StartedWith  int
-	FinishedWith string
+	StartCalled bool
+	StartedWith int
 
-	StartCalled  bool
+	BlindAlert []byte
+
 	FinishCalled bool
+	FinishedWith string
 }
 
 type TexasHoldem struct {
@@ -30,14 +32,14 @@ func NewTexasHoldem(alerter BlindAlerter, store PlayerStore) *TexasHoldem {
 	}
 }
 
-func (p *TexasHoldem) Start(numberOfPlayers int) {
+func (p *TexasHoldem) Start(numberOfPlayers int, alertsDestination io.Writer) {
 	//blindIncrement := time.Duration(5+numberOfPlayers) * time.Minute
 	blindIncrement := time.Duration(5+numberOfPlayers) * time.Second
 
 	blinds := []int{100, 200, 300, 400, 500, 600, 800, 1000, 2000, 4000, 8000}
 	blindTime := 0 * time.Second
 	for _, blind := range blinds {
-		p.alerter.ScheduleAlertAt(blindTime, blind)
+		p.alerter.ScheduleAlertAt(blindTime, blind, alertsDestination)
 		blindTime = blindTime + blindIncrement
 	}
 }
@@ -46,9 +48,10 @@ func (p *TexasHoldem) Finish(winner string) {
 	p.store.RecordWin(winner)
 }
 
-func (p *GameSpy) Start(numberOfPlayers int) {
-	p.StartedWith = numberOfPlayers
-	p.StartCalled = true
+func (g *GameSpy) Start(numberOfPlayers int, out io.Writer) {
+	g.StartCalled = true
+	g.StartedWith = numberOfPlayers
+	out.Write(g.BlindAlert)
 }
 
 func (p *GameSpy) Finish(winner string) {
