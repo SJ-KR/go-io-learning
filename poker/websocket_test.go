@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var tenMS time.Duration = time.Millisecond * 10
+
 func TestWeb(t *testing.T) {
 
 	t.Run("start game with 3 players and finish game with 'Chris' as winner", func(t *testing.T) {
@@ -64,6 +66,27 @@ func TestWeb(t *testing.T) {
 			t.Errorf("got blind alert %q, want %q", string(gotBlindAlert), wantedBlindAlert)
 		}
 	})
+
+	t.Run("start a game with 3 players, send some blind alerts down WS and declare Ruth the winner", func(t *testing.T) {
+		wantedBlindAlert := "Blind is 100"
+		winner := "Ruth"
+
+		game := &GameSpy{BlindAlert: []byte(wantedBlindAlert)}
+		server := httptest.NewServer(mustMakePlayerServer(t, dummyPlayerStore, game))
+		ws := mustDialWS(t, "ws"+strings.TrimPrefix(server.URL, "http")+"/ws")
+
+		defer server.Close()
+		defer ws.Close()
+
+		writeWSMessage(t, ws, "3")
+		writeWSMessage(t, ws, winner)
+
+		time.Sleep(tenMS)
+
+		assertGameStartedWith(t, game, 3)
+		assertFinishCalledWith(t, game, winner)
+		within(t, tenMS, func() { assertWebsocketGotMsg(t, ws, wantedBlindAlert) })
+	})
 }
 
 func mustMakePlayerServer(t *testing.T, store PlayerStore, game Game) *PlayerServer {
@@ -101,7 +124,7 @@ func within(t *testing.T, d time.Duration, assert func()) {
 
 	select {
 	case <-time.After(d):
-		t.Error("timed out")
+		t.Error("timed out (10ms)")
 	case <-done:
 	}
 }
