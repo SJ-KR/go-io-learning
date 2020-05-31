@@ -13,7 +13,7 @@ func TestLeague(t *testing.T) {
 
 	t.Run("it returns 200 on /league", func(t *testing.T) {
 		store := StubPlayerStore{}
-		server := NewPlayerServer(&store)
+		server, _ := NewPlayerServer(&store)
 
 		request, _ := http.NewRequest(http.MethodGet, "/league", nil)
 		response := httptest.NewRecorder()
@@ -38,7 +38,7 @@ func TestLeague(t *testing.T) {
 		}
 
 		store := StubPlayerStore{nil, nil, wantedLeague}
-		server := NewPlayerServer(&store)
+		server, _ := NewPlayerServer(&store)
 
 		request := newLeagueRequest()
 

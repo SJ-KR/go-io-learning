@@ -78,7 +78,7 @@ func TestGame_Start(t *testing.T) {
 }
 func TestGame(t *testing.T) {
 	t.Run("GET /game returns 200", func(t *testing.T) {
-		server := NewPlayerServer(&StubPlayerStore{})
+		server, _ := NewPlayerServer(&StubPlayerStore{})
 
 		request := newGameRequest()
 
