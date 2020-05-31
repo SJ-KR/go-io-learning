@@ -29,7 +29,7 @@ type Player struct {
 	Wins int
 }
 
-func NewPlayerServer(store PlayerStore, game Game) (*PlayerServer, error) {
+func NewPlayerServer(store PlayerStore) (*PlayerServer, error) {
 	p := new(PlayerServer)
 	tmpl, err := template.ParseFiles(htmlTemplatePath)
 	if err != nil {
