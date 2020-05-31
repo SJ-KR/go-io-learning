@@ -8,6 +8,8 @@ import (
 	"sort"
 )
 
+const jsonContentType = "application/json"
+
 type PlayerStore interface {
 	GetPlayerScore(name string) int
 	RecordWin(name string)
@@ -33,6 +35,7 @@ func NewPlayerServer(store PlayerStore) *PlayerServer {
 	router := http.NewServeMux()
 	router.Handle("/league", http.HandlerFunc(p.leagueHandler))
 	router.Handle("/players/", http.HandlerFunc(p.playerHandler))
+	router.Handle("/game", http.HandlerFunc(p.game))
 
 	p.Handler = router
 	return p
@@ -42,9 +45,12 @@ func (p *PlayerServer) GetPlayerScore(name string) int {
 
 	return p.Store.GetPlayerScore(name)
 }
+func (p *PlayerServer) game(w http.ResponseWriter, r *http.Request) {
 
+	w.WriteHeader(http.StatusOK)
+}
 func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", "application/json")
+	w.Header().Set("content-type", jsonContentType)
 	_ = json.NewEncoder(w).Encode(p.Store.GetLeague())
 	w.WriteHeader(http.StatusOK)
 
@@ -104,7 +110,6 @@ func (s *StubPlayerStore) GetLeague() League {
 	return s.league
 }
 
-/*
 type InMemoryPlayerStore struct {
 	store map[string]int
 }
@@ -126,7 +131,7 @@ func (i *InMemoryPlayerStore) GetLeague() League {
 	}
 	return league
 }
-*/
+
 type FileSystemPlayerStore struct {
 	Database *json.Encoder
 	League   League

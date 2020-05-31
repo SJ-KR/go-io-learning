@@ -9,8 +9,6 @@ import (
 	"testing"
 )
 
-const jsonContentType = "application/json"
-
 func TestLeague(t *testing.T) {
 
 	t.Run("it returns 200 on /league", func(t *testing.T) {

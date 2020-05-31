@@ -2,6 +2,9 @@ package poker
 
 import (
 	"bytes"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -72,6 +75,28 @@ func TestGame_Start(t *testing.T) {
 		}
 
 	})
+}
+func TestGame(t *testing.T) {
+	t.Run("GET /game returns 200", func(t *testing.T) {
+		server := NewPlayerServer(&StubPlayerStore{})
+
+		request := newGameRequest()
+
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assertStatus(t, response.Code, http.StatusOK)
+	})
+}
+func newGameRequest() *http.Request {
+	request, err := http.NewRequest(http.MethodGet, "/game", nil)
+
+	if err != nil {
+		fmt.Errorf("%q", err)
+		return nil
+	}
+	return request
 }
 func checkSchedulingCases(cases []scheduledAlert, t *testing.T, blindAlerter *SpyBlindAlerter) {
 	a := blindAlerter.Alerts
