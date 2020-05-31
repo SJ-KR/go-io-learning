@@ -107,24 +107,6 @@ func createTempFile(t *testing.T, initialData string) (*os.File, func()) {
 
 	return tmpfile, removeFile
 }
-func TestTape_Write(t *testing.T) {
-	file, clean := createTempFile(t, "12345")
-	defer clean()
-
-	tape := &tape{file}
-
-	tape.Write([]byte("abc"))
-
-	file.Seek(0, 0)
-	newFileContents, _ := ioutil.ReadAll(file)
-
-	got := string(newFileContents)
-	want := "abc"
-
-	if got != want {
-		t.Errorf("got %q want %q", got, want)
-	}
-}
 func assertNoError(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
